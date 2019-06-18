@@ -59,8 +59,81 @@ test('wasMutated', (t) => {
   let original = { foo: { bar: 5 } }
   let wrapper = muta(original)
   t.false(muta.wasMutated(wrapper))
+  original.foo.bar += 1
+  t.false(muta.wasMutated(wrapper))
+  t.equal(original.foo.bar, 6)
+  t.equal(wrapper.foo.bar, 6)
   wrapper.foo.bar += 1
   t.true(muta.wasMutated(wrapper))
+  t.equal(original.foo.bar, 6)
+  t.equal(wrapper.foo.bar, 7)
+  t.end()
+})
+
+test('function class', (t) => {
+  function Original () { this.b = 123 }
+  Original.prototype.a = function () { this.b = 456 }
+  const Copy = muta(Original)
+  Copy.prototype.a = function () { this.b = 789 }
+
+  const copy = new Copy()
+  t.equal(copy.b, 123)
+  copy.a()
+  t.equal(copy.b, 789, 'uses new method for "a"')
+  const original = new Original()
+  t.equal(original.b, 123)
+  original.a()
+  t.equal(original.b, 456, 'original should be unmodified')
+
+  t.end()
+})
+
+test('class syntax', (t) => {
+  class Original {
+    constructor () {
+      this.b = 123
+    }
+    a () {
+      this.b = 456
+    }
+  }
+  const Copy = muta(Original)
+
+  const copy = new Copy()
+  t.equal(copy.b, 123)
+  copy.a()
+  t.equal(copy.b, 456)
+
+  Original.prototype.a = function () { this.b = 789 }
+  copy.a()
+  t.equal(copy.b, 789)
+
+  t.end()
+})
+
+test('class syntax subclass', (t) => {
+  class Original {
+    constructor () {
+      this.b = 123
+    }
+    a () {
+      this.b = 456
+    }
+  }
+  const Copy = muta(Original)
+
+  class NewClass extends Copy {
+    constructor () {
+      super()
+      this.b = 789
+    }
+  }
+
+  const inst = new NewClass()
+  t.equal(inst.b, 789)
+  inst.a()
+  t.equal(inst.b, 456)
+
   t.end()
 })
 

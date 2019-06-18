@@ -20,6 +20,8 @@ class VirtualObject {
   }
 
   get (target, key) {
+    console.warn('get', key)
+
     // lets us unwrap by accessing the PATCH symbol key
     if (key === PATCH) {
       return this
@@ -140,6 +142,34 @@ class VirtualObject {
     }
 
     return Reflect.getOwnPropertyDescriptor(target, key)
+  }
+
+  construct (Target, args, newTarget) {
+    console.warn('>>> construct', Target)
+    let result
+    if (Target.toString().includes('class')) {
+      result = new Target(...args)
+    } else {
+      result = Reflect.construct(Target, args, newTarget)
+    }
+    console.warn('<<< construct')
+    return this.wrap(result, this.patch['construct'])
+  }
+
+  apply (target, thisArgument, argumentsList) {
+    console.warn('>>> apply')
+    const result = Reflect.apply(target, thisArgument, argumentsList)
+    console.warn('<<< apply')
+
+    return result
+    // const wrapperFn = function (...args) {
+    //   if (new.target) {
+    //     return Reflect.construct(target, args, new.target)
+    //   } else {
+    //     return Reflect.apply(target, this, args)
+    //   }
+    // }
+    // return Reflect.apply(wrapperFn, thisArgument, argumentsList)
   }
 
   assignsTo (key) {
